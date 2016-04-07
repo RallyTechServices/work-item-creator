@@ -16,8 +16,9 @@ Ext.define("WICreator", {
     config: {
         defaultSettings: {
             parentFeature:'',
-            planEst:'',
             usName:'',
+            tagsOfUS:[],
+            planEst:'',
             showGrid:false
         }
     },
@@ -40,21 +41,30 @@ Ext.define("WICreator", {
                 readyEvent: 'ready'
             },
             {
-                name: 'planEst',
-                xtype: 'textfield',
-                fieldLabel: 'Plan Estimate',
-                labelWidth: 125,
-                labelAlign: 'left',
-                minWidth: 50,
-                margin: 10
-            },
-            {
                 name: 'usName',
                 xtype: 'textfield',
                 fieldLabel: 'Default User Story Name',
                 labelWidth: 125,
                 labelAlign: 'left',
                 minWidth: 200,
+                margin: 10
+            },
+            {
+                xtype: 'rallytagpicker',
+                name: 'tagsOfUS',
+                fieldLabel: 'Tags',
+                labelAlign: 'left',
+                labelWidth: 125,
+                minWidth: 200,
+                margin: 10
+            },
+            {
+                name: 'planEst',
+                xtype: 'textfield',
+                fieldLabel: 'Plan Estimate',
+                labelWidth: 125,
+                labelAlign: 'left',
+                minWidth: 50,
                 margin: 10
             },
             {
@@ -69,8 +79,7 @@ Ext.define("WICreator", {
         ];
     },
 
-
-                        
+                       
     launch: function() {
         var me = this;
 
@@ -140,7 +149,13 @@ Ext.define("WICreator", {
             }
         });
     },
-
+    _getTags: function(){
+        var tags = this.getSetting('tagsOfUS') || [];
+        if (!(tags instanceof Array)){
+            tags = tags.split(',');
+        }
+        return tags;
+    },
     _createUserStories: function(){
         //Create a defect record, specifying initial values in the constructor
         var me = this;
@@ -155,6 +170,7 @@ Ext.define("WICreator", {
             Project:me.getContext().get('project'),
             Owner:me.getContext().get('user'),
             PortfolioItem:me.getSetting('parentFeature'),
+            Tags:me._getTags(),
             PlanEstimate:me.getSetting('planEst')
         });
 
