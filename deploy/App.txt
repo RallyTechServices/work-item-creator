@@ -3,11 +3,11 @@
 <head>
     <title>Work Item Creator</title>
     <!--  (c) 2015,2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Mon Apr 18 2016 21:57:33 GMT-0400 (EDT) -->
+    <!--  Build Date: Tue Apr 19 2016 08:50:52 GMT-0400 (EDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Mon Apr 18 2016 21:57:33 GMT-0400 (EDT)";
-        var CHECKSUM = 7609042239;
+        var APP_BUILD_DATE = "Tue Apr 19 2016 08:50:52 GMT-0400 (EDT)";
+        var CHECKSUM = 7737803185;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -206,7 +206,7 @@ Ext.define("WICreator", {
         var me = this;
         me.kanbanProcessField = 'ScheduleState';
 
-        var appSttings =   [
+        return  [
             {
                 name: 'showGrid',
                 xtype: 'rallycheckboxfield',
@@ -288,13 +288,13 @@ Ext.define("WICreator", {
                 labelAlign: 'left',
                 minWidth: 200,
                 margin: '10 10 10 10',
-                autoExpand: false,
-                alwaysExpanded: false,                
+                autoExpand: true,
+                alwaysExpanded: true,                
                 model: 'HierarchicalRequirement',
                 field: 'ScheduleState',
+                emptyText:me.getSetting('kanbanProcessFieldValue'),
                 handlesEvents: {
                     kanbanProcessFieldChange: function(chk){
-                        //console.log('on change>>', chk);
                         this.field = chk.value;
                     }
                 },
@@ -338,7 +338,6 @@ Ext.define("WICreator", {
                 field: 'ScheduleState',
                 handlesEvents: {
                     classOfServiceFieldChange: function(chk){
-                        //console.log('on change>>', chk);
                         this.field = chk.value;
                     }
                 },
@@ -379,7 +378,6 @@ Ext.define("WICreator", {
                 field: 'ScheduleState',
                 handlesEvents: {
                     storyTypeFieldChange: function(chk){
-                        //console.log('on change>>', chk);
                         this.field = chk.value;
                     }
                 },
@@ -388,7 +386,6 @@ Ext.define("WICreator", {
 
         ];
 
-        return appSttings;
     },
 
     _filterOutWthString: function(store,filter_string) {
@@ -503,6 +500,8 @@ Ext.define("WICreator", {
         }
 
         userSotryRec[me.getSetting('kanbanProcessField')] = me.getSetting('kanbanProcessFieldValue');
+        userSotryRec[me.getSetting('classOfServiceField')] = me.getSetting('classOfServiceFieldValue');
+        userSotryRec[me.getSetting('storyTypeField')] = me.getSetting('storyTypeFieldValue');
 
         var record = Ext.create(me.model, userSotryRec);
 

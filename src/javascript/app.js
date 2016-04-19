@@ -28,7 +28,7 @@ Ext.define("WICreator", {
         var me = this;
         me.kanbanProcessField = 'ScheduleState';
 
-        var appSttings =   [
+        return  [
             {
                 name: 'showGrid',
                 xtype: 'rallycheckboxfield',
@@ -110,13 +110,13 @@ Ext.define("WICreator", {
                 labelAlign: 'left',
                 minWidth: 200,
                 margin: '10 10 10 10',
-                autoExpand: false,
-                alwaysExpanded: false,                
+                autoExpand: true,
+                alwaysExpanded: true,                
                 model: 'HierarchicalRequirement',
                 field: 'ScheduleState',
+                emptyText:me.getSetting('kanbanProcessFieldValue'),
                 handlesEvents: {
                     kanbanProcessFieldChange: function(chk){
-                        //console.log('on change>>', chk);
                         this.field = chk.value;
                     }
                 },
@@ -160,7 +160,6 @@ Ext.define("WICreator", {
                 field: 'ScheduleState',
                 handlesEvents: {
                     classOfServiceFieldChange: function(chk){
-                        //console.log('on change>>', chk);
                         this.field = chk.value;
                     }
                 },
@@ -201,7 +200,6 @@ Ext.define("WICreator", {
                 field: 'ScheduleState',
                 handlesEvents: {
                     storyTypeFieldChange: function(chk){
-                        //console.log('on change>>', chk);
                         this.field = chk.value;
                     }
                 },
@@ -210,7 +208,6 @@ Ext.define("WICreator", {
 
         ];
 
-        return appSttings;
     },
 
     _filterOutWthString: function(store,filter_string) {
