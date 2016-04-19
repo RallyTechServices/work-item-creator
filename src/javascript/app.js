@@ -1,5 +1,6 @@
 Ext.define("WICreator", {
     extend: 'Rally.app.App',
+    settingsScope: 'workspace',
     componentCls: 'app',
     logger: new Rally.technicalservices.Logger(),
     defaults: { margin: 10 },
@@ -25,8 +26,17 @@ Ext.define("WICreator", {
 
     getSettingsFields: function() {
         var me = this;
+        me.kanbanProcessField = 'ScheduleState';
 
-        return [
+        var appSttings =   [
+            {
+                name: 'showGrid',
+                xtype: 'rallycheckboxfield',
+                boxLabelAlign: 'after',
+                fieldLabel: '',
+                margin: '0 0 25 200',
+                boxLabel: 'Show Grid<br/><span style="color:#999999;"><i>Tick to show the grid of User Stories for the Feature selected</i></span>'
+            },
             {
                 name: 'parentFeature',
                 xtype: 'rallycombobox',
@@ -36,7 +46,8 @@ Ext.define("WICreator", {
                 minWidth: 200,
                 margin: 10,
                 autoExpand: false,
-                alwaysExpanded: false,                
+                alwaysExpanded: false,
+                allowNoEntry:true,                
                 store:me.parentFeatures,
                 readyEvent: 'ready'
             },
@@ -68,59 +79,201 @@ Ext.define("WICreator", {
                 margin: 10
             },
             {
-                name: 'showGrid',
-                xtype: 'rallycheckboxfield',
-                boxLabelAlign: 'after',
-                fieldLabel: '',
-                margin: '0 0 25 200',
-                boxLabel: 'Show Grid<br/><span style="color:#999999;"><i>Tick to show the grid of User Stories for the Feature selected</i></span>'
+                name: 'kanbanProcessField',
+                itemId:'kanbanProcessField',
+                xtype: 'rallyfieldcombobox',
+                fieldLabel: 'Kanban Process',
+                labelWidth: 125,
+                labelAlign: 'left',
+                minWidth: 200,
+                margin: '10 10 10 10',
+                autoExpand: false,
+                alwaysExpanded: false,                
+                model: 'HierarchicalRequirement',
+                bubbleEvents: ['kanbanProcessFieldChange'],
+                listeners: {
+                    ready: function(field_box) {
+                        me._filterOutWthString(field_box.getStore(),'Kanban Process');
+                    },
+                    change: function(field_box) {
+                        this.fireEvent('kanbanProcessFieldChange',field_box);
+                    }
+                },                
+                readyEvent: 'ready'
+            },
+            {
+                name: 'kanbanProcessFieldValue',
+                itemId:'kanbanProcessFieldValue',
+                xtype: 'rallyfieldvaluecombobox',
+                fieldLabel: 'Kanban Process Value',
+                labelWidth: 125,
+                labelAlign: 'left',
+                minWidth: 200,
+                margin: '10 10 10 10',
+                autoExpand: false,
+                alwaysExpanded: false,                
+                model: 'HierarchicalRequirement',
+                field: 'ScheduleState',
+                handlesEvents: {
+                    kanbanProcessFieldChange: function(chk){
+                        //console.log('on change>>', chk);
+                        this.field = chk.value;
+                    }
+                },
+                readyEvent: 'ready'                
+            },
+            {
+                name: 'classOfServiceField',
+                itemId:'classOfServiceField',
+                xtype: 'rallyfieldcombobox',
+                fieldLabel: 'Class of Service',
+                labelWidth: 125,
+                labelAlign: 'left',
+                minWidth: 200,
+                margin: '10 10 10 10',
+                autoExpand: false,
+                alwaysExpanded: false,                
+                model: 'HierarchicalRequirement',
+                bubbleEvents: ['classOfServiceFieldChange'],
+                listeners: {
+                    ready: function(field_box) {
+                        me._filterOutWthString(field_box.getStore(),'Class of Service');
+                    },
+                    change: function(field_box) {
+                        this.fireEvent('classOfServiceFieldChange',field_box);
+                    }
+                },                
+                readyEvent: 'ready'
+            },
+            {
+                name: 'classOfServiceFieldValue',
+                itemId:'classOfServiceFieldValue',
+                xtype: 'rallyfieldvaluecombobox',
+                fieldLabel: 'Class of Service Value',
+                labelWidth: 125,
+                labelAlign: 'left',
+                minWidth: 200,
+                margin: '10 10 10 10',
+                autoExpand: false,
+                alwaysExpanded: false,                
+                model: 'HierarchicalRequirement',
+                field: 'ScheduleState',
+                handlesEvents: {
+                    classOfServiceFieldChange: function(chk){
+                        //console.log('on change>>', chk);
+                        this.field = chk.value;
+                    }
+                },
+                readyEvent: 'ready'                
+            },
+            {
+                name: 'storyTypeField',
+                itemId:'storyTypeField',
+                xtype: 'rallyfieldcombobox',
+                fieldLabel: 'Story Type',
+                labelWidth: 125,
+                labelAlign: 'left',
+                minWidth: 200,
+                margin: '10 10 10 10',
+                autoExpand: false,
+                alwaysExpanded: false,                
+                model: 'HierarchicalRequirement',
+                bubbleEvents: ['storyTypeFieldChange'],
+                listeners: {
+                    change: function(field_box) {
+                        this.fireEvent('storyTypeFieldChange',field_box);
+                    }
+                },                
+                readyEvent: 'ready'
+            },
+            {
+                name: 'storyTypeFieldValue',
+                itemId:'storyTypeFieldValue',
+                xtype: 'rallyfieldvaluecombobox',
+                fieldLabel: 'Story Type Value',
+                labelWidth: 125,
+                labelAlign: 'left',
+                minWidth: 200,
+                margin: '10 10 10 10',
+                autoExpand: false,
+                alwaysExpanded: false,                
+                model: 'HierarchicalRequirement',
+                field: 'ScheduleState',
+                handlesEvents: {
+                    storyTypeFieldChange: function(chk){
+                        //console.log('on change>>', chk);
+                        this.field = chk.value;
+                    }
+                },
+                readyEvent: 'ready'                
             }
 
         ];
+
+        return appSttings;
     },
 
-                       
+    _filterOutWthString: function(store,filter_string) {
+
+        console.log('store >>',store);
+        var app = Rally.getApp();
+        
+        store.filter([{
+            filterFn:function(field){ 
+                var attribute_definition = field.get('fieldDefinition').attributeDefinition;
+                var attribute_type = null;
+                if ( attribute_definition ) {
+                    attribute_name = attribute_definition.Name;
+                }
+                if ( attribute_name.indexOf(filter_string) > -1) {
+                        return true;
+                }
+                return false;
+            } 
+        }]);
+    },
+
+
     launch: function() {
         var me = this;
-
-        var model_filter = [{property:'Project.ObjectID',value:me.getContext().get('project').ObjectID}];
 
         Rally.data.ModelFactory.getModel({
             type: 'UserStory',
             success: function(model){
                 me.model = model;
                 me._addUSForm();
-                me._loadAStoreWithAPromise('PortfolioItem/Feature',['ObjectID','Name'],model_filter).then({
-                    scope:me,
-                    success:function(store){
-                        console.log('features>>',store);
-                        me.parentFeatures = store;
-                    }
-                });
+                me._getFeaturesAndStories();
+            
             },
             scope: me
         });
 
 
-        // this.setLoading("Loading stuff...");
-        
-        // var model_name = 'Defect',
-        //     field_names = ['Name','State'];
-        
-        // this._loadAStoreWithAPromise(model_name, field_names).then({
-        //     scope: this,
-        //     success: function(store) {
-        //         this._displayGrid(store,field_names);
-        //     },
-        //     failure: function(error_message){
-        //         alert(error_message);
-        //     }
-        // }).always(function() {
-        //     me.setLoading(false);
-        // });
     },
 
-      
+    _getFeaturesAndStories: function(){
+        var deferred = Ext.create('Deft.Deferred');
+        var me = this;
+
+        var feature_model_filter = [{property:'Project.ObjectID',value:me.getContext().get('project').ObjectID}];
+        var model_filters = [{property:'PortfolioItem',value:me.getSetting('parentFeature')}];
+        var field_names = ['Name','ScheduleState','Project','Owner','Feature','PlanEstimate'];
+                
+        var promises = [];
+
+
+        Deft.Promise.all([me._loadAStoreWithAPromise('PortfolioItem/Feature',['ObjectID','Name'],feature_model_filter),me._loadAStoreWithAPromise('UserStory', field_names,model_filters)],me).then({
+                    success: function(results){
+                        me.parentFeatures = results[0];
+                        if(me.getSetting('showGrid') == true || me.getSetting('showGrid') == "true" ){
+                            me._displayGrid(results[1],field_names);
+                        }
+                    },
+                    scope: me
+        });
+        return deferred;
+    }, 
+
     _addUSForm: function(){
         var me = this;
         var selector_box = me.down('#selector_box');
@@ -148,6 +301,7 @@ Ext.define("WICreator", {
                 scope: me
             }
         });
+
     },
     _getTags: function(){
         var tags = this.getSetting('tagsOfUS') || [];
@@ -160,25 +314,44 @@ Ext.define("WICreator", {
         //Create a defect record, specifying initial values in the constructor
         var me = this;
         //console.log('Feature >>',me.getSetting('parentFeature'));
-        var currentTime = Ext.Date.format(new Date(), 'm/d/Y g:i:s A');
-        var usn =  me.getSetting('usName')+ ' ' + currentTime;
-        me.down('#userStoryName').setValue(usn);
 
-        var record = Ext.create(me.model, {
+        var userSotryRec = {
             Name: me.down('#userStoryName').value,
             ScheduleState:'Defined',
             Project:me.getContext().get('project'),
             Owner:me.getContext().get('user'),
             PortfolioItem:me.getSetting('parentFeature'),
-            Tags:me._getTags(),
             PlanEstimate:me.getSetting('planEst')
-        });
+        }
+
+        userSotryRec[me.getSetting('kanbanProcessField')] = me.getSetting('kanbanProcessFieldValue');
+        userSotryRec[me.getSetting('classOfServiceField')] = me.getSetting('classOfServiceFieldValue');
+        userSotryRec[me.getSetting('storyTypeField')] = me.getSetting('storyTypeFieldValue');
+
+        var record = Ext.create(me.model, userSotryRec);
 
         record.save({
             callback: function(result, operation) {
                 if(operation.wasSuccessful()) {
                     //Get the new defect's objectId
                     var objectId = result.get('ObjectID');
+
+                    var tags = result.getCollection('Tags');
+                    tags.load({
+                        callback: function() {
+                            Ext.Array.each(me._getTags(),function(tag){
+                                tags.add(tag);
+                            });
+                            tags.sync({
+                                callback: function() {
+                                    //success!
+                                }
+                            });
+                        },
+                        scope:me
+                    });
+
+
                     if(me.getSetting('showGrid') == true || me.getSetting('showGrid') == "true" ){
                         var model_filters = [{property:'PortfolioItem',value:me.getSetting('parentFeature')}];
                         var field_names = ['Name','ScheduleState','Project','Owner','Feature','PlanEstimate']
@@ -195,14 +368,12 @@ Ext.define("WICreator", {
                             me.setLoading(false);
                         });
                     }
-                    // me.down('selector_box').removeAll();
-                    // me._addUSForm();
-                    // var msg = 'User Story '+ me.down('#userStoryName').value + ' with (ObjectID - ' + objectId + ') created! ';
-                    // me.down('selector_box').add({
-                    //     xtype: 'text',
-                    //     text: msg,
-                    //     id:'successMsg'
-                    // });
+
+                    // change the value of User Story name txt box with current time.
+                        var currentTime = Ext.Date.format(new Date(), 'm/d/Y g:i:s A');
+                        var usn =  me.getSetting('usName')+ ' ' + currentTime;
+                        me.down('#userStoryName').setValue(usn);    
+
                 }
             },
             scope:me
@@ -240,7 +411,13 @@ Ext.define("WICreator", {
         Ext.create('Rally.data.wsapi.Store', {
             model: model_name,
             fetch: model_fields,
-            filters: model_filters
+            filters: model_filters,
+            sorters: [
+                {
+                    property: 'DragAndDropRank',
+                    direction: 'ASC'
+                }
+            ]
         }).load({
             callback : function(records, operation, successful) {
                 if (successful){
