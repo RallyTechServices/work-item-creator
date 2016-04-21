@@ -61,13 +61,79 @@ Ext.define("WICreator", {
                 margin: 10
             },
             {
+                itemId:'tagsOfUS',
                 xtype: 'rallytagpicker',
                 name: 'tagsOfUS',
+                modelType:'Tag',
                 fieldLabel: 'Tags',
                 labelAlign: 'left',
+                showSearchIcon:true,
                 labelWidth: 125,
                 minWidth: 200,
-                margin: 10
+                margin: 10,
+                bubbleEvents: ['change','selectionchange','blur'],
+                storeConfig: {
+                    limit: 20,
+                    pageSize: 20,
+                    fetch:['Archived', 'ObjectID', 'Name'],
+                    sorters: [
+                        {
+                            property: 'Name',
+                            direction: 'ASC'
+                        }
+                    ]
+                },
+                pickerCfg: {
+                    style: {
+                        border: '1px solid #DDD',
+                        'border-top': 'none'
+                    },
+                    cls: 'tagfilter-picker'
+                },
+                listCfg: {
+                    emptyText: '<div class="rui-multi-object-picker-empty-text">No matching tag</div>',
+                    cls: 'tagfilter-list'
+                },
+                listType:'Ext.view.BoundList'
+            },
+            {
+                xtype:'container',
+                tpl:Ext.create('Rally.ui.renderer.template.PillTemplate',{collectionName:'Tags' , cls:'tagPill'}),
+                itemId:'tagTpl',
+                margin: 10,
+                handlesEvents: {
+                    change: function(tag){
+                        this.update({Tags:[]});
+                        var data = _.map(tag.getValue(), function(item){
+                            return item.getData();
+                        });
+                        this.update({Tags:data});
+                    },
+                    selectionchange: function(tag){
+                        this.update({Tags:[]});
+                        var data = _.map(tag.getValue(), function(item){
+                            return item.getData();
+                        });
+                        this.update({Tags:data});
+                    },
+                    blur:function(tag){
+                        this.update({Tags:[]});
+                        var data = _.map(tag.getValue(), function(item){
+                            return item.getData();
+                        });
+                        this.update({Tags:data});
+                    }
+                },
+                listeners:{
+                    activate:function(cont){
+                        this.update({Tags:[]});
+                        var tags = me.tagsOfUSAdded ? me.tagsOfUSAdded : null;
+                        var data = _.map(me.tagsOfUSAdded.getValue(), function(item){
+                            return item.getData();
+                        });
+                        this.update({Tags:data});
+                    }
+                },
             },
             {
                 name: 'planEst',
@@ -114,7 +180,11 @@ Ext.define("WICreator", {
                 alwaysExpanded: true,                
                 model: 'HierarchicalRequirement',
                 field: 'ScheduleState',
-                emptyText:me.getSetting('kanbanProcessFieldValue'),
+                listeners: {
+                    ready: function(cb) {
+                        cb.setValue(me.getSetting('kanbanProcessFieldValue'));
+                    }
+                }, 
                 handlesEvents: {
                     kanbanProcessFieldChange: function(chk){
                         this.field = chk.value;
@@ -158,6 +228,11 @@ Ext.define("WICreator", {
                 alwaysExpanded: false,                
                 model: 'HierarchicalRequirement',
                 field: 'ScheduleState',
+                listeners: {
+                    ready: function(cb) {
+                        cb.setValue(me.getSetting('classOfServiceFieldValue'));
+                    }
+                },                 
                 handlesEvents: {
                     classOfServiceFieldChange: function(chk){
                         this.field = chk.value;
@@ -166,9 +241,9 @@ Ext.define("WICreator", {
                 readyEvent: 'ready'                
             },
             {
-                name: 'storyTypeField',
-                itemId:'storyTypeField',
-                xtype: 'rallyfieldcombobox',
+                name: 'storyTypeFieldValue',
+                itemId:'storyTypeFieldValue',
+                xtype: 'rallyfieldvaluecombobox',
                 fieldLabel: 'Story Type',
                 labelWidth: 125,
                 labelAlign: 'left',
@@ -177,32 +252,12 @@ Ext.define("WICreator", {
                 autoExpand: false,
                 alwaysExpanded: false,                
                 model: 'HierarchicalRequirement',
-                bubbleEvents: ['storyTypeFieldChange'],
+                field: 'StoryType',
                 listeners: {
-                    change: function(field_box) {
-                        this.fireEvent('storyTypeFieldChange',field_box);
+                    ready: function(cb) {
+                        cb.setValue(me.getSetting('storyTypeFieldValue'));
                     }
-                },                
-                readyEvent: 'ready'
-            },
-            {
-                name: 'storyTypeFieldValue',
-                itemId:'storyTypeFieldValue',
-                xtype: 'rallyfieldvaluecombobox',
-                fieldLabel: 'Story Type Value',
-                labelWidth: 125,
-                labelAlign: 'left',
-                minWidth: 200,
-                margin: '10 10 10 10',
-                autoExpand: false,
-                alwaysExpanded: false,                
-                model: 'HierarchicalRequirement',
-                field: 'ScheduleState',
-                handlesEvents: {
-                    storyTypeFieldChange: function(chk){
-                        this.field = chk.value;
-                    }
-                },
+                }, 
                 readyEvent: 'ready'                
             }
 
@@ -212,7 +267,6 @@ Ext.define("WICreator", {
 
     _filterOutWthString: function(store,filter_string) {
 
-        console.log('store >>',store);
         var app = Rally.getApp();
         
         store.filter([{
@@ -254,7 +308,7 @@ Ext.define("WICreator", {
 
         var feature_model_filter = [{property:'Project.ObjectID',value:me.getContext().get('project').ObjectID}];
         var model_filters = [{property:'PortfolioItem',value:me.getSetting('parentFeature')}];
-        var field_names = ['Name','ScheduleState','Project','Owner','Feature','PlanEstimate'];
+        var field_names = ['FormattedID','Name','ScheduleState','Project','Owner','Feature','PlanEstimate'];
                 
         var promises = [];
 
@@ -268,6 +322,7 @@ Ext.define("WICreator", {
                     },
                     scope: me
         });
+
         return deferred;
     }, 
 
@@ -286,6 +341,7 @@ Ext.define("WICreator", {
                 value:usn,
                 allowBlank: false  // requires a non-empty value
         });
+
 
         selector_box.add({
             xtype: 'rallybutton',
@@ -318,12 +374,12 @@ Ext.define("WICreator", {
             Project:me.getContext().get('project'),
             Owner:me.getContext().get('user'),
             PortfolioItem:me.getSetting('parentFeature'),
-            PlanEstimate:me.getSetting('planEst')
+            PlanEstimate:me.getSetting('planEst'),
+            c_StoryType:me.getSetting('storyTypeFieldValue')
         }
 
         userSotryRec[me.getSetting('kanbanProcessField')] = me.getSetting('kanbanProcessFieldValue');
         userSotryRec[me.getSetting('classOfServiceField')] = me.getSetting('classOfServiceFieldValue');
-        userSotryRec[me.getSetting('storyTypeField')] = me.getSetting('storyTypeFieldValue');
 
         var record = Ext.create(me.model, userSotryRec);
 
