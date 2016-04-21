@@ -3,14 +3,14 @@
 <head>
     <title>Work Item Creator</title>
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Tue Apr 19 2016 08:50:52 GMT-0400 (EDT)";
+        var APP_BUILD_DATE = "Thu Apr 21 2016 15:42:47 GMT-0400 (EDT)";
     </script>
     
-    <script type="text/javascript" src="https://us1.rallydev.com//apps/2.0/sdk-debug.js?apiKey=_PUT_APIKEY_HERE_"></script>
+    <script type="text/javascript" src="https://us1.rallydev.com//apps/2.1/sdk-debug.js?apiKey=_PUT_APIKEY_HERE_"></script>
 
     <script type="text/javascript">
         Rally.onReady(function() {
-            Rally.loadScripts(["src/javascript/utils/__ts-info-link.js","src/javascript/utils/__ts-logger.js","src/javascript/app.js"],
+            Rally.loadScripts(["src/javascript/utils/__ts-info-link.js","src/javascript/utils/__ts-logger.js","src/javascript/utils/_overrides.js","src/javascript/app.js"],
 	            function() {
 	                Rally.launchApp('WICreator', {
 	                    name: 'Work Item Creator'
