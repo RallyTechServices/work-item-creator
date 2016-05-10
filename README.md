@@ -1,5 +1,25 @@
 #Work Item Creator
 
+This application allows the user to quickly create user stories based on predefined values on App Settings. The application prepopulates name of the story with time stamp.
+
+![ScreenShot](images/wic1.png)
+
+You will be able to assign values to one or more fields on App Settings.
+
+![ScreenShot](images/wic2.png)
+
+####Steps to install the Application
+ 1. On your dashboard, click on the gear to add an app.
+ 2. Choose "Custom HTML" from the App Catalog. Add the app.
+ 3. Paste the code to HTML text area from the link - https://raw.githubusercontent.com/RallyTechServices/work-item-creator/master/deploy/App.txt
+ 4. Click Save.
+
+
+####Steps to get started:
+ 1. Once the application is installed, open App Settings select the feature and populate other fields as needed. 
+ 2. Save app settings.
+ 3. Start creating stories in a click of a button!
+
 ## Development Notes
 
 ### First Load
