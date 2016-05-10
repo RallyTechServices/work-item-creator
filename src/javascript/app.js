@@ -69,7 +69,8 @@ Ext.define("WICreator", {
                 labelAlign: 'left',
                 showSearchIcon:true,
                 labelWidth: 125,
-                minWidth: 200,
+                remoteFilter: true,
+                width: 400,
                 margin: 10,
                 bubbleEvents: ['change','selectionchange','blur'],
                 storeConfig: {
@@ -90,19 +91,21 @@ Ext.define("WICreator", {
                     },
                     cls: 'tagfilter-picker'
                 },
+                listType:'Ext.view.BoundList',
                 listCfg: {
                     emptyText: '<div class="rui-multi-object-picker-empty-text">No matching tag</div>',
-                    cls: 'tagfilter-list'
-                },
-                listType:'Ext.view.BoundList'
+                    cls: 'tagfilter-list',
+                    width:400
+                }
             },
             {
                 xtype:'container',
-                tpl:Ext.create('Rally.ui.renderer.template.PillTemplate',{collectionName:'Tags' , cls:'tagPill'}),
+                tpl:Ext.create('Rally.ui.renderer.template.PillTemplate',{collectionName:'Tags', cls:'tagPill'}),
                 itemId:'tagTpl',
                 margin: 10,
                 handlesEvents: {
                     change: function(tag){
+                        console.log('change --- ');
                         this.update({Tags:[]});
                         var data = _.map(tag.getValue(), function(item){
                             return item.getData();
@@ -110,6 +113,8 @@ Ext.define("WICreator", {
                         this.update({Tags:data});
                     },
                     selectionchange: function(tag){
+                        console.log('change --- ');
+
                         this.update({Tags:[]});
                         var data = _.map(tag.getValue(), function(item){
                             return item.getData();
@@ -117,6 +122,8 @@ Ext.define("WICreator", {
                         this.update({Tags:data});
                     },
                     blur:function(tag){
+                        console.log('change --- ');
+                        
                         this.update({Tags:[]});
                         var data = _.map(tag.getValue(), function(item){
                             return item.getData();
@@ -155,14 +162,16 @@ Ext.define("WICreator", {
                 margin: '10 10 10 10',
                 autoExpand: false,
                 alwaysExpanded: false,                
-                model: 'HierarchicalRequirement',
+                model: 'UserStory',
+                hiddenName:'Kanban',
                 bubbleEvents: ['kanbanProcessFieldChange'],
                 listeners: {
-                    ready: function(field_box) {
-                        me._filterOutWthString(field_box.getStore(),'Kanban Process');
+                    ready: function(cb) {
+                        console.log('CB-Kanban',cb);
+                        me._filterOutWthString(cb.getStore(),'Kanban');
                     },
-                    change: function(field_box) {
-                        this.fireEvent('kanbanProcessFieldChange',field_box);
+                    change: function(cb) {
+                        this.fireEvent('kanbanProcessFieldChange',cb);
                     }
                 },                
                 readyEvent: 'ready'
@@ -178,7 +187,7 @@ Ext.define("WICreator", {
                 margin: '10 10 10 10',
                 autoExpand: true,
                 alwaysExpanded: true,                
-                model: 'HierarchicalRequirement',
+                model: 'UserStory',
                 field: 'ScheduleState',
                 listeners: {
                     ready: function(cb) {
@@ -203,14 +212,15 @@ Ext.define("WICreator", {
                 margin: '10 10 10 10',
                 autoExpand: false,
                 alwaysExpanded: false,                
-                model: 'HierarchicalRequirement',
+                model: 'UserStory',
                 bubbleEvents: ['classOfServiceFieldChange'],
                 listeners: {
-                    ready: function(field_box) {
-                        me._filterOutWthString(field_box.getStore(),'Class of Service');
+                    ready: function(cb) {
+                        console.log('CB-Class',cb);
+                        me._filterOutWthString(cb.getStore(),'Class');
                     },
-                    change: function(field_box) {
-                        this.fireEvent('classOfServiceFieldChange',field_box);
+                    change: function(cb) {
+                        this.fireEvent('classOfServiceFieldChange',cb);
                     }
                 },                
                 readyEvent: 'ready'
@@ -226,7 +236,7 @@ Ext.define("WICreator", {
                 margin: '10 10 10 10',
                 autoExpand: false,
                 alwaysExpanded: false,                
-                model: 'HierarchicalRequirement',
+                model: 'UserStory',
                 field: 'ScheduleState',
                 listeners: {
                     ready: function(cb) {
@@ -251,7 +261,7 @@ Ext.define("WICreator", {
                 margin: '10 10 10 10',
                 autoExpand: false,
                 alwaysExpanded: false,                
-                model: 'HierarchicalRequirement',
+                model: 'UserStory',
                 field: 'StoryType',
                 listeners: {
                     ready: function(cb) {
@@ -276,7 +286,8 @@ Ext.define("WICreator", {
                 if ( attribute_definition ) {
                     attribute_name = attribute_definition.Name;
                 }
-                if ( attribute_name.indexOf(filter_string) > -1) {
+                //string.toLowerCase().indexOf(searchstring.toLowerCase())
+                if ( attribute_name.toLowerCase().indexOf(filter_string.toLowerCase()) > -1) {
                         return true;
                 }
                 return false;
