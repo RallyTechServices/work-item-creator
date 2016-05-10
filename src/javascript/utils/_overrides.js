@@ -41,3 +41,29 @@ Ext.override(Rally.ui.combobox.FieldValueComboBox,{
             });
     }
 });
+
+// overriding to make the store load hidden fields. 
+
+Ext.override(Rally.ui.combobox.FieldComboBox,{
+
+    _populateStore: function() {
+            if (!this.store) {
+                return;
+            }
+            var data = _.sortBy(
+                _.map(
+                    this.model.getFields(),
+                    this._convertFieldToLabelValuePair,
+                    this
+                ),
+                'name'
+            );
+
+            this.store.loadRawData(data);
+            this._onStoreLoad();
+            this.setDefaultValue();
+            this.onReady();
+        }
+
+
+});
