@@ -3,11 +3,11 @@
 <head>
     <title>Work Item Creator</title>
     <!--  (c) 2015,2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Tue May 10 2016 14:10:16 GMT-0400 (EDT) -->
+    <!--  Build Date: Thu May 12 2016 09:03:16 GMT-0400 (EDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Tue May 10 2016 14:10:16 GMT-0400 (EDT)";
-        var CHECKSUM = 10723228869;
+        var APP_BUILD_DATE = "Thu May 12 2016 09:03:16 GMT-0400 (EDT)";
+        var CHECKSUM = 11394416110;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -286,16 +286,27 @@ Ext.define("WICreator", {
             },
             {
                 name: 'parentFeature',
-                xtype: 'rallycombobox',
+                xtype: 'rallyartifactsearchcombobox',
                 fieldLabel: 'Parent Feature',
                 labelWidth: 125,
                 labelAlign: 'left',
                 minWidth: 200,
                 margin: 10,
-                autoExpand: false,
-                alwaysExpanded: false,
-                allowNoEntry:true,                
-                store:me.parentFeatures,
+                allowClear:true,
+                // autoExpand: false,
+                // alwaysExpanded: false,
+                // allowNoEntry:true,                
+                storeConfig: {
+                    models: ['PortfolioItem/Feature'],
+                    limit: 20,
+                    pageSize: 20,
+                    context:{
+                        project:null
+                    }
+                },
+                listCfg: {
+                    pageSize:20
+                },
                 readyEvent: 'ready'
             },
             {
@@ -319,7 +330,8 @@ Ext.define("WICreator", {
                 remoteFilter: true,
                 width: 400,
                 margin: 10,
-                bubbleEvents: ['change','selectionchange','blur'],
+                //value: me.getSetting('tagsOfUS'),
+                bubbleEvents: ['selectionchange','change'],
                 storeConfig: {
                     limit: 20,
                     pageSize: 20,
@@ -350,44 +362,44 @@ Ext.define("WICreator", {
                 tpl:Ext.create('Rally.ui.renderer.template.PillTemplate',{collectionName:'Tags', cls:'tagPill'}),
                 itemId:'tagTpl',
                 margin: 10,
+                data: me.selectedTags,
                 handlesEvents: {
                     change: function(tag){
-                        console.log('change --- ');
-                        this.update({Tags:[]});
-                        var data = _.map(tag.getValue(), function(item){
-                            return item.getData();
-                        });
-                        this.update({Tags:data});
-                    },
-                    selectionchange: function(tag){
-                        console.log('change --- ');
+                        // console.log('change --- ');
 
                         this.update({Tags:[]});
                         var data = _.map(tag.getValue(), function(item){
                             return item.getData();
                         });
                         this.update({Tags:data});
+                        //console.log('selectionchange',data);
+
                     },
-                    blur:function(tag){
-                        console.log('change --- ');
-                        
+                    selectionchange: function(tag){
+                        // console.log('change --- ');
+
                         this.update({Tags:[]});
                         var data = _.map(tag.getValue(), function(item){
                             return item.getData();
                         });
                         this.update({Tags:data});
+                        //console.log('selectionchange',data);
+
                     }
-                },
-                listeners:{
-                    activate:function(cont){
-                        this.update({Tags:[]});
-                        var tags = me.tagsOfUSAdded ? me.tagsOfUSAdded : null;
-                        var data = _.map(me.tagsOfUSAdded.getValue(), function(item){
-                            return item.getData();
-                        });
-                        this.update({Tags:data});
-                    }
-                },
+                }
+                // ,
+                // listeners:{
+                //     added:function(){
+                //         //this.update({Tags:[]});
+                //         console.log('selectedTags array',me.selectedTags);  
+                //         var data = _.map(me.selectedTags, function(item){
+                //             return item.getData();
+                //         });
+                //         console.log(this,data);
+                //         this.update({Tags:data});                           
+                //         //this.update({Tags:me.selectedTags});
+                //     }
+                // }
             },
             {
                 name: 'planEst',
@@ -414,7 +426,7 @@ Ext.define("WICreator", {
                 bubbleEvents: ['kanbanProcessFieldChange'],
                 listeners: {
                     ready: function(cb) {
-                        console.log('CB-Kanban',cb);
+                        // console.log('CB-Kanban',cb);
                         me._filterOutWthString(cb.getStore(),'Kanban');
                     },
                     change: function(cb) {
@@ -463,7 +475,7 @@ Ext.define("WICreator", {
                 bubbleEvents: ['classOfServiceFieldChange'],
                 listeners: {
                     ready: function(cb) {
-                        console.log('CB-Class',cb);
+                        // console.log('CB-Class',cb);
                         me._filterOutWthString(cb.getStore(),'Class');
                     },
                     change: function(cb) {
@@ -551,38 +563,60 @@ Ext.define("WICreator", {
             success: function(model){
                 me.model = model;
                 me._addUSForm();
-                me._getFeaturesAndStories();
-            
+                if(me._getTags().length > 0){
+                    me._loadTags();
+                }else{
+                    me.selectedTags = []
+                }
+                if(me.getSetting('showGrid') == true || me.getSetting('showGrid') == "true" ){
+                    me._loadStoriesForFeature();
+                }
             },
             scope: me
         });
 
-
     },
 
-    _getFeaturesAndStories: function(){
-        var deferred = Ext.create('Deft.Deferred');
+    _loadTags:function(){
         var me = this;
+        var deferred = Ext.create('Deft.Deferred');
+        
+        var model_filters = [];
 
-        var feature_model_filter = [{property:'Project.ObjectID',value:me.getContext().get('project').ObjectID}];
-        var model_filters = [{property:'PortfolioItem',value:me.getSetting('parentFeature')}];
-        var field_names = ['FormattedID','Name','ScheduleState','Project','Owner','Feature','PlanEstimate'];
-                
-        var promises = [];
-
-
-        Deft.Promise.all([me._loadAStoreWithAPromise('PortfolioItem/Feature',['ObjectID','Name'],feature_model_filter),me._loadAStoreWithAPromise('UserStory', field_names,model_filters)],me).then({
-                    success: function(results){
-                        me.parentFeatures = results[0];
-                        if(me.getSetting('showGrid') == true || me.getSetting('showGrid') == "true" ){
-                            me._displayGrid(results[1],field_names);
-                        }
-                    },
-                    scope: me
+        Ext.Array.each(me._getTags(),function(tag){
+            model_filters.push({property: "ObjectID", value: tag.split("/tag/").pop()});
         });
 
-        return deferred;
-    }, 
+        if(model_filters.length > 1){
+            model_filters = Rally.data.wsapi.Filter.or(model_filters);
+        }
+
+        var field_names = ['FormattedID','Name','ObjectID'];
+
+        this._loadAStoreWithAPromise('Tag', field_names,model_filters).then({
+            scope: this,
+            success: function(records) {
+                //console.log('Slected tags',records);
+                var result = [];
+                if(records.data){
+                    Ext.Array.each(records.data.items,function(item){
+                    //console.log('each rec',item);
+                        result.push(item.data);
+                    });                
+                }
+
+                //console.log('Reslut arr',result);
+                me.selectedTags = result;
+            },
+            failure: function(error_message){
+                alert(error_message);
+            }
+        }).always(function() {
+            me.setLoading(false);
+        });
+
+        return deferred;        
+    },
 
     _addUSForm: function(){
         var me = this;
@@ -664,20 +698,7 @@ Ext.define("WICreator", {
 
 
                     if(me.getSetting('showGrid') == true || me.getSetting('showGrid') == "true" ){
-                        var model_filters = [{property:'PortfolioItem',value:me.getSetting('parentFeature')}];
-                        var field_names = ['Name','ScheduleState','Project','Owner','Feature','PlanEstimate']
-
-                        this._loadAStoreWithAPromise('UserStory', field_names,model_filters).then({
-                            scope: this,
-                            success: function(store) {
-                                this._displayGrid(store,field_names);
-                            },
-                            failure: function(error_message){
-                                alert(error_message);
-                            }
-                        }).always(function() {
-                            me.setLoading(false);
-                        });
+                        me._loadStoriesForFeature();
                     }
 
                     // change the value of User Story name txt box with current time.
@@ -692,6 +713,27 @@ Ext.define("WICreator", {
 
     },
 
+    _loadStoriesForFeature:function(){
+        var me = this;
+        var deferred = Ext.create('Deft.Deferred');
+
+        var model_filters = [{property:'PortfolioItem',value:me.getSetting('parentFeature')}];
+        var field_names = ['FormattedID','Name','ScheduleState','Project','Owner','Feature','PlanEstimate'];
+
+        this._loadAStoreWithAPromise('UserStory', field_names,model_filters).then({
+            scope: this,
+            success: function(store) {
+                this._displayGrid(store,field_names);
+            },
+            failure: function(error_message){
+                alert(error_message);
+            }
+        }).always(function() {
+            me.setLoading(false);
+        });
+
+        return deferred;
+    },
 
     _loadWsapiRecords: function(config){
         var deferred = Ext.create('Deft.Deferred');
