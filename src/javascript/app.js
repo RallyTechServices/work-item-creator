@@ -175,14 +175,15 @@ Ext.define("WICreator", {
                 autoExpand: false,
                 alwaysExpanded: false,                
                 model: 'UserStory',
-                hiddenName:'Kanban',
+                //hiddenName:'Kanban',
+                //allowNoEntry: true,
                 bubbleEvents: ['kanbanProcessFieldChange'],
                 listeners: {
                     ready: function(cb) {
-                        // console.log('CB-Kanban',cb);
                         me._filterOutWthString(cb.getStore(),'Kanban');
                     },
                     change: function(cb) {
+                        console.log('kanbanProcessFieldChange Fired!');
                         this.fireEvent('kanbanProcessFieldChange',cb);
                     }
                 },                
@@ -208,7 +209,10 @@ Ext.define("WICreator", {
                 }, 
                 handlesEvents: {
                     kanbanProcessFieldChange: function(chk){
-                        this.field = chk.value;
+                        console.log('kanbanProcessFieldChange',chk);
+                        var field = chk.getValue();
+                        this.field = chk.model.getField(field);
+                        this._populateStore();
                     }
                 },
                 readyEvent: 'ready'                
@@ -223,15 +227,16 @@ Ext.define("WICreator", {
                 minWidth: 200,
                 margin: '10 10 10 10',
                 autoExpand: false,
-                alwaysExpanded: false,                
+                alwaysExpanded: false,
+                //allowNoEntry: true,                
                 model: 'UserStory',
                 bubbleEvents: ['classOfServiceFieldChange'],
                 listeners: {
                     ready: function(cb) {
-                        // console.log('CB-Class',cb);
                         me._filterOutWthString(cb.getStore(),'Class');
                     },
                     change: function(cb) {
+                        console.log('classOfServiceFieldChange Fired!');
                         this.fireEvent('classOfServiceFieldChange',cb);
                     }
                 },                
@@ -252,12 +257,15 @@ Ext.define("WICreator", {
                 field: 'ScheduleState',
                 listeners: {
                     ready: function(cb) {
-                        cb.setValue(me.getSetting('classOfServiceFieldValue'));
+                        cb.setValue(me.getSetting('classOfServiceField'));
                     }
                 },                 
                 handlesEvents: {
                     classOfServiceFieldChange: function(chk){
-                        this.field = chk.value;
+                        console.log('classOfServiceFieldChange',chk);
+                        var field = chk.getValue();
+                        this.field = chk.model.getField(field);
+                        this._populateStore();
                     }
                 },
                 readyEvent: 'ready'                
@@ -286,7 +294,20 @@ Ext.define("WICreator", {
         ];
 
     },
-
+    _fetchAllowedValues: function(model, field){
+        var deferred = Ext.create('Deft.Deferred');
+        model.getField(field).getAllowedValueStore().load({
+            callback: function(records, operation, success) {
+                if (success){
+                          
+                    deferred.resolve(records);
+                } else {
+                    deferred.reject('Error fetching AllowedValues:  ' + operation.error.errors.join(','));
+                }
+            }
+        });
+        return deferred;
+    },
     _filterOutWthString: function(store,filter_string) {
 
         var app = Rally.getApp();

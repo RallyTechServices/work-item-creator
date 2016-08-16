@@ -1,5 +1,13 @@
 Ext.override(Rally.ui.combobox.FieldValueComboBox,{
 
+    _populateStore: function() {
+        console.log('this.field',this.field);
+        if (!this.field) {
+            Ext.Error.raise('field config must be specified when creating a Rally.ui.combobox.FieldValueComboBox');
+        }
+        this._loadStoreValues();
+    },
+
     _loadStoreValues: function() {
             this.field.getAllowedValueStore().load({
                 requester: this,

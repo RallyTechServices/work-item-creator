@@ -1,5 +1,5 @@
 {
     "name": "Work Item Creator",
-    "sdk": "2.1",
+    "sdk": "2.0",
     "className": "WICreator"
 }
