@@ -20,13 +20,18 @@ Ext.define("WICreator", {
             usName:'',
             tagsOfUS:[],
             planEst:'',
+            kanbanProcessField:'',
+            kanbanProcessFieldValue:'',
+            classOfServiceField:'',
+            classOfServiceFieldValue:'',
+            storyTypeFieldValue:'',
             showGrid:false
         }
     },
 
     getSettingsFields: function() {
         var me = this;
-        me.kanbanProcessField = 'ScheduleState';
+        //me.kanbanProcessField = 'ScheduleState';
 
         return  [
             {
@@ -46,9 +51,6 @@ Ext.define("WICreator", {
                 minWidth: 200,
                 margin: 10,
                 allowClear:true,
-                // autoExpand: false,
-                // alwaysExpanded: false,
-                // allowNoEntry:true,                
                 storeConfig: {
                     models: ['PortfolioItem/Feature'],
                     limit: 20,
@@ -83,8 +85,14 @@ Ext.define("WICreator", {
                 remoteFilter: true,
                 width: 400,
                 margin: 10,
-                //value: me.getSetting('tagsOfUS'),
+                alwaysSelectedValues: me.selectedTags,
                 bubbleEvents: ['selectionchange','change'],
+                listeners:{
+                    added:function(tp){
+                        console.log('tags',this,tp,me.selectedTags);
+                        this.setValue(me.selectedTags);
+                    }
+                },
                 storeConfig: {
                     limit: 20,
                     pageSize: 20,
@@ -118,41 +126,20 @@ Ext.define("WICreator", {
                 data: me.selectedTags,
                 handlesEvents: {
                     change: function(tag){
-                        // console.log('change --- ');
-
                         this.update({Tags:[]});
                         var data = _.map(tag.getValue(), function(item){
                             return item.getData();
                         });
                         this.update({Tags:data});
-                        //console.log('selectionchange',data);
-
                     },
                     selectionchange: function(tag){
-                        // console.log('change --- ');
-
                         this.update({Tags:[]});
                         var data = _.map(tag.getValue(), function(item){
                             return item.getData();
                         });
                         this.update({Tags:data});
-                        //console.log('selectionchange',data);
-
                     }
                 }
-                // ,
-                // listeners:{
-                //     added:function(){
-                //         //this.update({Tags:[]});
-                //         console.log('selectedTags array',me.selectedTags);  
-                //         var data = _.map(me.selectedTags, function(item){
-                //             return item.getData();
-                //         });
-                //         console.log(this,data);
-                //         this.update({Tags:data});                           
-                //         //this.update({Tags:me.selectedTags});
-                //     }
-                // }
             },
             {
                 name: 'planEst',
@@ -172,17 +159,16 @@ Ext.define("WICreator", {
                 labelAlign: 'left',
                 minWidth: 200,
                 margin: '10 10 10 10',
-                autoExpand: false,
-                alwaysExpanded: false,                
                 model: 'UserStory',
-                //hiddenName:'Kanban',
-                //allowNoEntry: true,
+                value: me.getSetting('kanbanProcessField'),
+                allowNoEntry: true,
                 bubbleEvents: ['kanbanProcessFieldChange'],
                 listeners: {
                     ready: function(cb) {
                         me._filterOutWthString(cb.getStore(),'Kanban');
+                        //this.fireEvent('kanbanProcessFieldChange',cb);
                     },
-                    change: function(cb) {
+                    select: function(cb) {
                         console.log('kanbanProcessFieldChange Fired!');
                         this.fireEvent('kanbanProcessFieldChange',cb);
                     }
@@ -201,18 +187,16 @@ Ext.define("WICreator", {
                 autoExpand: true,
                 alwaysExpanded: true,                
                 model: 'UserStory',
-                field: 'ScheduleState',
-                listeners: {
-                    ready: function(cb) {
-                        cb.setValue(me.getSetting('kanbanProcessFieldValue'));
-                    }
-                }, 
+                field: me.getSetting('kanbanProcessField'),
+                value: me.getSetting('kanbanProcessFieldValue'),
                 handlesEvents: {
                     kanbanProcessFieldChange: function(chk){
                         console.log('kanbanProcessFieldChange',chk);
                         var field = chk.getValue();
                         this.field = chk.model.getField(field);
-                        this._populateStore();
+                        if(this.field){
+                            this._populateStore();
+                        }
                     }
                 },
                 readyEvent: 'ready'                
@@ -228,14 +212,15 @@ Ext.define("WICreator", {
                 margin: '10 10 10 10',
                 autoExpand: false,
                 alwaysExpanded: false,
-                //allowNoEntry: true,                
+                allowNoEntry: true,                
                 model: 'UserStory',
+                value: me.getSetting('classOfServiceField'),
                 bubbleEvents: ['classOfServiceFieldChange'],
                 listeners: {
                     ready: function(cb) {
                         me._filterOutWthString(cb.getStore(),'Class');
                     },
-                    change: function(cb) {
+                    select: function(cb) {
                         console.log('classOfServiceFieldChange Fired!');
                         this.fireEvent('classOfServiceFieldChange',cb);
                     }
@@ -254,18 +239,16 @@ Ext.define("WICreator", {
                 autoExpand: false,
                 alwaysExpanded: false,                
                 model: 'UserStory',
-                field: 'ScheduleState',
-                listeners: {
-                    ready: function(cb) {
-                        cb.setValue(me.getSetting('classOfServiceField'));
-                    }
-                },                 
+                field: me.getSetting('classOfServiceField'),
+                value: me.getSetting('classOfServiceFieldValue'),
                 handlesEvents: {
                     classOfServiceFieldChange: function(chk){
                         console.log('classOfServiceFieldChange',chk);
                         var field = chk.getValue();
                         this.field = chk.model.getField(field);
-                        this._populateStore();
+                        if(this.field){
+                            this._populateStore();
+                        }
                     }
                 },
                 readyEvent: 'ready'                
@@ -283,6 +266,7 @@ Ext.define("WICreator", {
                 alwaysExpanded: false,                
                 model: 'UserStory',
                 field: 'StoryType',
+                value: me.getSetting('storyTypeFieldValue'),
                 listeners: {
                     ready: function(cb) {
                         cb.setValue(me.getSetting('storyTypeFieldValue'));
@@ -314,6 +298,9 @@ Ext.define("WICreator", {
         
         store.filter([{
             filterFn:function(field){ 
+                if('-- No Entry --' == field.get('name')){
+                    return true;
+                }
                 var attribute_definition = field.get('fieldDefinition').attributeDefinition;
                 var attribute_type = null;
                 if ( attribute_definition ) {

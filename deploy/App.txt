@@ -3,14 +3,14 @@
 <head>
     <title>Work Item Creator</title>
     <!--  (c) 2015,2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Mon Aug 15 2016 23:11:12 GMT-0400 (EDT) -->
+    <!--  Build Date: Fri Aug 19 2016 09:39:50 GMT-0400 (EDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Mon Aug 15 2016 23:11:12 GMT-0400 (EDT)";
-        var CHECKSUM = 12607777219;
+        var APP_BUILD_DATE = "Fri Aug 19 2016 09:39:50 GMT-0400 (EDT)";
+        var CHECKSUM = 12598786209;
     </script>
     
-    <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
+    <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
 
     <script type="text/javascript">
         Rally.onReady(function() {
@@ -184,48 +184,49 @@ Ext.override(Rally.ui.combobox.FieldValueComboBox,{
             Ext.Error.raise('field config must be specified when creating a Rally.ui.combobox.FieldValueComboBox');
         }
         this._loadStoreValues();
-    },
-
-    _loadStoreValues: function() {
-            this.field.getAllowedValueStore().load({
-                requester: this,
-                callback: function (records, operation, success) {
-                    var store = this.store;
-                    if (!store) {
-                        return;
-                    }
-                    var noEntryValues = [],
-                        labelValues = _.map(
-                            _.filter(records, this._hasStringValue),
-                            this._convertAllowedValueToLabelValuePair,
-                            this
-                        );
-
-                    if (this.field.getType() === 'boolean') {
-                        labelValues = labelValues.concat([
-                            this._convertToLabelValuePair('Yes', true),
-                            this._convertToLabelValuePair('No', false)
-                        ]);
-                    } else if (this.field.required === false) {
-                        var name = "-- No Entry --",
-                            value = "";
-                        if (this.getUseNullForNoEntryValue()) {
-                            value = null;
-                        }
-                        if (this.field.attributeDefinition.AttributeType.toLowerCase() === 'rating') {
-                            name = this.getRatingNoEntryString();
-                            value = "None";
-                        }
-                        noEntryValues.push(this._convertToLabelValuePair(name, value));
-                    }
-
-                    store.loadRawData(noEntryValues.concat(labelValues));
-                    store.fireEvent('load', store, store.getRange(), success);
-                    this.onReady();
-                },
-                scope: this
-            });
     }
+    // ,
+
+    // _loadStoreValues: function() {
+    //         this.field.getAllowedValueStore().load({
+    //             requester: this,
+    //             callback: function (records, operation, success) {
+    //                 var store = this.store;
+    //                 if (!store) {
+    //                     return;
+    //                 }
+    //                 var noEntryValues = [],
+    //                     labelValues = _.map(
+    //                         _.filter(records, this._hasStringValue),
+    //                         this._convertAllowedValueToLabelValuePair,
+    //                         this
+    //                     );
+
+    //                 if (this.field.getType() === 'boolean') {
+    //                     labelValues = labelValues.concat([
+    //                         this._convertToLabelValuePair('Yes', true),
+    //                         this._convertToLabelValuePair('No', false)
+    //                     ]);
+    //                 } else if (this.field.required === false) {
+    //                     var name = "-- No Entry --",
+    //                         value = "";
+    //                     if (this.getUseNullForNoEntryValue()) {
+    //                         value = null;
+    //                     }
+    //                     if (this.field.attributeDefinition.AttributeType.toLowerCase() === 'rating') {
+    //                         name = this.getRatingNoEntryString();
+    //                         value = "None";
+    //                     }
+    //                     noEntryValues.push(this._convertToLabelValuePair(name, value));
+    //                 }
+
+    //                 store.loadRawData(noEntryValues.concat(labelValues));
+    //                 store.fireEvent('load', store, store.getRange(), success);
+    //                 this.onReady();
+    //             },
+    //             scope: this
+    //         });
+    // }
 });
 
 // overriding to make the store load hidden fields. 
@@ -275,13 +276,18 @@ Ext.define("WICreator", {
             usName:'',
             tagsOfUS:[],
             planEst:'',
+            kanbanProcessField:'',
+            kanbanProcessFieldValue:'',
+            classOfServiceField:'',
+            classOfServiceFieldValue:'',
+            storyTypeFieldValue:'',
             showGrid:false
         }
     },
 
     getSettingsFields: function() {
         var me = this;
-        me.kanbanProcessField = 'ScheduleState';
+        //me.kanbanProcessField = 'ScheduleState';
 
         return  [
             {
@@ -301,9 +307,6 @@ Ext.define("WICreator", {
                 minWidth: 200,
                 margin: 10,
                 allowClear:true,
-                // autoExpand: false,
-                // alwaysExpanded: false,
-                // allowNoEntry:true,                
                 storeConfig: {
                     models: ['PortfolioItem/Feature'],
                     limit: 20,
@@ -338,8 +341,14 @@ Ext.define("WICreator", {
                 remoteFilter: true,
                 width: 400,
                 margin: 10,
-                //value: me.getSetting('tagsOfUS'),
+                alwaysSelectedValues: me.selectedTags,
                 bubbleEvents: ['selectionchange','change'],
+                listeners:{
+                    added:function(tp){
+                        console.log('tags',this,tp,me.selectedTags);
+                        this.setValue(me.selectedTags);
+                    }
+                },
                 storeConfig: {
                     limit: 20,
                     pageSize: 20,
@@ -373,41 +382,20 @@ Ext.define("WICreator", {
                 data: me.selectedTags,
                 handlesEvents: {
                     change: function(tag){
-                        // console.log('change --- ');
-
                         this.update({Tags:[]});
                         var data = _.map(tag.getValue(), function(item){
                             return item.getData();
                         });
                         this.update({Tags:data});
-                        //console.log('selectionchange',data);
-
                     },
                     selectionchange: function(tag){
-                        // console.log('change --- ');
-
                         this.update({Tags:[]});
                         var data = _.map(tag.getValue(), function(item){
                             return item.getData();
                         });
                         this.update({Tags:data});
-                        //console.log('selectionchange',data);
-
                     }
                 }
-                // ,
-                // listeners:{
-                //     added:function(){
-                //         //this.update({Tags:[]});
-                //         console.log('selectedTags array',me.selectedTags);  
-                //         var data = _.map(me.selectedTags, function(item){
-                //             return item.getData();
-                //         });
-                //         console.log(this,data);
-                //         this.update({Tags:data});                           
-                //         //this.update({Tags:me.selectedTags});
-                //     }
-                // }
             },
             {
                 name: 'planEst',
@@ -427,17 +415,16 @@ Ext.define("WICreator", {
                 labelAlign: 'left',
                 minWidth: 200,
                 margin: '10 10 10 10',
-                autoExpand: false,
-                alwaysExpanded: false,                
                 model: 'UserStory',
-                //hiddenName:'Kanban',
-                //allowNoEntry: true,
+                value: me.getSetting('kanbanProcessField'),
+                allowNoEntry: true,
                 bubbleEvents: ['kanbanProcessFieldChange'],
                 listeners: {
                     ready: function(cb) {
                         me._filterOutWthString(cb.getStore(),'Kanban');
+                        //this.fireEvent('kanbanProcessFieldChange',cb);
                     },
-                    change: function(cb) {
+                    select: function(cb) {
                         console.log('kanbanProcessFieldChange Fired!');
                         this.fireEvent('kanbanProcessFieldChange',cb);
                     }
@@ -456,18 +443,16 @@ Ext.define("WICreator", {
                 autoExpand: true,
                 alwaysExpanded: true,                
                 model: 'UserStory',
-                field: 'ScheduleState',
-                listeners: {
-                    ready: function(cb) {
-                        cb.setValue(me.getSetting('kanbanProcessFieldValue'));
-                    }
-                }, 
+                field: me.getSetting('kanbanProcessField'),
+                value: me.getSetting('kanbanProcessFieldValue'),
                 handlesEvents: {
                     kanbanProcessFieldChange: function(chk){
                         console.log('kanbanProcessFieldChange',chk);
                         var field = chk.getValue();
                         this.field = chk.model.getField(field);
-                        this._populateStore();
+                        if(this.field){
+                            this._populateStore();
+                        }
                     }
                 },
                 readyEvent: 'ready'                
@@ -483,14 +468,15 @@ Ext.define("WICreator", {
                 margin: '10 10 10 10',
                 autoExpand: false,
                 alwaysExpanded: false,
-                //allowNoEntry: true,                
+                allowNoEntry: true,                
                 model: 'UserStory',
+                value: me.getSetting('classOfServiceField'),
                 bubbleEvents: ['classOfServiceFieldChange'],
                 listeners: {
                     ready: function(cb) {
                         me._filterOutWthString(cb.getStore(),'Class');
                     },
-                    change: function(cb) {
+                    select: function(cb) {
                         console.log('classOfServiceFieldChange Fired!');
                         this.fireEvent('classOfServiceFieldChange',cb);
                     }
@@ -509,18 +495,16 @@ Ext.define("WICreator", {
                 autoExpand: false,
                 alwaysExpanded: false,                
                 model: 'UserStory',
-                field: 'ScheduleState',
-                listeners: {
-                    ready: function(cb) {
-                        cb.setValue(me.getSetting('classOfServiceField'));
-                    }
-                },                 
+                field: me.getSetting('classOfServiceField'),
+                value: me.getSetting('classOfServiceFieldValue'),
                 handlesEvents: {
                     classOfServiceFieldChange: function(chk){
                         console.log('classOfServiceFieldChange',chk);
                         var field = chk.getValue();
                         this.field = chk.model.getField(field);
-                        this._populateStore();
+                        if(this.field){
+                            this._populateStore();
+                        }
                     }
                 },
                 readyEvent: 'ready'                
@@ -538,6 +522,7 @@ Ext.define("WICreator", {
                 alwaysExpanded: false,                
                 model: 'UserStory',
                 field: 'StoryType',
+                value: me.getSetting('storyTypeFieldValue'),
                 listeners: {
                     ready: function(cb) {
                         cb.setValue(me.getSetting('storyTypeFieldValue'));
@@ -569,6 +554,9 @@ Ext.define("WICreator", {
         
         store.filter([{
             filterFn:function(field){ 
+                if('-- No Entry --' == field.get('name')){
+                    return true;
+                }
                 var attribute_definition = field.get('fieldDefinition').attributeDefinition;
                 var attribute_type = null;
                 if ( attribute_definition ) {
